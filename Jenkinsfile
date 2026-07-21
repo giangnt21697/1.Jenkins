@@ -21,17 +21,15 @@ pipeline {
         }
 
         stage('Run Debug Script') {
-            steps {
-                echo "===== Chạy scripts/debug.ps1 ====="
+    steps {
+        echo "===== Chạy scripts/debug.ps1 ====="
 
-    powershell '''
-.\scripts\prepare.ps1 -Software "${params.SOFTWARE}"
-
-.\scripts\install.ps1 -Software "${params.SOFTWARE}"
-'''
+        powershell '''
+            .\scripts\prepare.ps1 -Software "${params.SOFTWARE}"
+            .\scripts\install.ps1 -Software "${params.SOFTWARE}"
+        '''
+    }
 }
-        }
-
     }
 
     post {
