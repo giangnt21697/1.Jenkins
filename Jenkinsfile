@@ -2,32 +2,38 @@ pipeline {
     agent any
 
     parameters {
-        // 1. Sửa lỗi cú pháp Active Choice bằng cách bọc hàm chuẩn hóa hệ thống
+        // 1. Sửa lỗi định dạng SecureGroovyScript cho Active Choice
         activeChoice(
             name: 'CHON_PHAN_MEM',
             choiceType: 'PT_SINGLE_SELECT',
             description: 'Nhập từ khóa tìm kiếm hoặc chọn gói phần mềm từ Server Setup',
-            script: groovyScript(
-                fallbackScript: "return ['Không kết nối được kho bộ cài tại 10.2.15.93!']",
-                script: '''
-                    import groovy.io.FileType
-                    def softwareList = []
-                    // Đã nhân đôi dấu gạch chéo ngược để bảo vệ đường dẫn mạng Windows
-                    def shareFolder = new File("\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup") 
-                    
-                    if(shareFolder.exists()) {
-                        shareFolder.eachDir { dir -> softwareList.add(dir.name) }
-                    } else {
-                        def shareFolderAlt = new File("\\\\\\\\10.2.15.93\\\\Giangnt\\\\Setup")
-                        if(shareFolderAlt.exists()) {
-                            shareFolderAlt.eachDir { dir -> softwareList.add(dir.name) }
+            script: [
+                $class: 'GroovyScript',
+                fallbackScript: [
+                    script: "return ['Không kết nối được kho bộ cài tại 10.2.15.93!']",
+                    sandbox: true
+                ],
+                script: [
+                    script: '''
+                        import groovy.io.FileType
+                        def softwareList = []
+                        def shareFolder = new File("\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup") 
+                        
+                        if(shareFolder.exists()) {
+                            shareFolder.eachDir { dir -> softwareList.add(dir.name) }
                         } else {
-                            softwareList.add("Không tìm thấy hoặc không thể truy cập thư mục: " + shareFolder.getAbsolutePath())
+                            def shareFolderAlt = new File("\\\\\\\\10.2.15.93\\\\Giangnt\\\\Setup")
+                            if(shareFolderAlt.exists()) {
+                                shareFolderAlt.eachDir { dir -> softwareList.add(dir.name) }
+                            } else {
+                                softwareList.add("Không tìm thấy hoặc không thể truy cập thư mục Setup")
+                            }
                         }
-                    }
-                    return softwareList.sort()
-                '''
-            ),
+                        return softwareList.sort()
+                    ''',
+                    sandbox: true
+                ]
+            ],
             filterable: true // Ô tìm kiếm bằng văn bản (Text Search)
         )
         
@@ -40,7 +46,6 @@ pipeline {
     }
 
     environment {
-        // Đường dẫn mạng và thư mục tạm thực tế của bạn
         SHARE_PATH = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
         SHARE_PATH_ALT = '\\\\10.2.15.93\\Giangnt\\Setup'
         TARGET_DIR = 'C:\\It-Support\\SCM' 
