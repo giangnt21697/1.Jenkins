@@ -9,7 +9,6 @@ Write-Host "===== INSTALL ====="
 Write-Host ""
 Write-Host "Software : $Software"
 
-# Tìm file cài đặt
 $Installer = Get-ChildItem `
     -Path $TargetFolder `
     -Recurse `
@@ -23,11 +22,9 @@ if ($null -eq $Installer)
 
 Write-Host ""
 Write-Host "Found Installer"
-
 Write-Host "Name      : $($Installer.Name)"
 Write-Host "Extension : $($Installer.Extension)"
 Write-Host "Full Path : $($Installer.FullName)"
-
 Write-Host ""
 
 switch ($Installer.Extension.ToLower())
@@ -37,10 +34,18 @@ switch ($Installer.Extension.ToLower())
         Write-Host "Installer Type : MSI"
         Write-Host "Start Installing..."
 
-        Start-Process `
+        $Process = Start-Process `
             -FilePath "msiexec.exe" `
             -ArgumentList "/i `"$($Installer.FullName)`" /qn /norestart" `
-            -Wait
+            -Wait `
+            -PassThru
+
+        Write-Host "Exit Code : $($Process.ExitCode)"
+
+        if($Process.ExitCode -ne 0)
+        {
+            throw "MSI cài đặt thất bại."
+        }
 
         break
     }
@@ -49,7 +54,56 @@ switch ($Installer.Extension.ToLower())
     {
         Write-Host "Installer Type : EXE"
 
-        throw "Chưa cấu hình silent switch cho file EXE."
+        $SilentArgs = @(
+            "/S",
+            "/s",
+            "/silent",
+            "/SILENT",
+            "/quiet",
+            "/VERYSILENT",
+            "/verysilent",
+            "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
+            "/silent /install"
+        )
+
+        $Installed = $false
+
+        foreach($Arg in $SilentArgs)
+        {
+            Write-Host ""
+            Write-Host "Trying : $Arg"
+
+            try
+            {
+                $Process = Start-Process `
+                    -FilePath $Installer.FullName `
+                    -ArgumentList $Arg `
+                    -Wait `
+                    -PassThru `
+                    -ErrorAction Stop
+
+                Write-Host "Exit Code : $($Process.ExitCode)"
+
+                if($Process.ExitCode -eq 0)
+                {
+                    Write-Host "Silent switch accepted."
+
+                    $Installed = $true
+                    break
+                }
+            }
+            catch
+            {
+                Write-Host "Failed."
+            }
+        }
+
+        if(-not $Installed)
+        {
+            throw "Không tìm được silent switch phù hợp."
+        }
+
+        break
     }
 
     default
