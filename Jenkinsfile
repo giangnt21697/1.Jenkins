@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        // 1. Sửa lỗi định dạng SecureGroovyScript cho Active Choice
+        // 1. Sửa lỗi phân tích chuỗi Groovy để giữ nguyên đường dẫn ổ D mạng thực tế của bạn
         activeChoice(
             name: 'CHON_PHAN_MEM',
             choiceType: 'PT_SINGLE_SELECT',
@@ -17,24 +17,22 @@ pipeline {
                     script: '''
                         import groovy.io.FileType
                         def softwareList = []
-                        def shareFolder = new File("\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup") 
+                        
+                        // Sử dụng cơ chế chuỗi an toàn để Windows nhận diện chính xác ổ d$ ẩn quản trị
+                        String networkPath = "\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup"
+                        def shareFolder = new File(networkPath) 
                         
                         if(shareFolder.exists()) {
                             shareFolder.eachDir { dir -> softwareList.add(dir.name) }
                         } else {
-                            def shareFolderAlt = new File("\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup")
-                            if(shareFolderAlt.exists()) {
-                                shareFolderAlt.eachDir { dir -> softwareList.add(dir.name) }
-                            } else {
-                                softwareList.add("Không tìm thấy hoặc không thể truy cập thư mục Setup")
-                            }
+                            softwareList.add("Không tìm thấy đường dẫn thực tế: " + shareFolder.getAbsolutePath())
                         }
                         return softwareList.sort()
                     ''',
                     sandbox: true
                 ]
             ],
-            filterable: true // Ô tìm kiếm bằng văn bản (Text Search)
+            filterable: true
         )
         
         // 2. Tham số nhập máy đích Target linh hoạt
@@ -46,8 +44,8 @@ pipeline {
     }
 
     environment {
+        // Đường dẫn mạng chuẩn hóa tuyệt đối cho các stage thực thi PowerShell/Windows
         SHARE_PATH = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
-        SHARE_PATH_ALT = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
         TARGET_DIR = 'C:\\It-Support\\SCM' 
     }
 
@@ -92,10 +90,8 @@ pipeline {
                         Write-Host "Thư mục cố định đã sẵn sàng và đang ở trạng thái ẩn."
                     }
                     
+                    # Trỏ thẳng đến thư mục con của phần mềm được chọn trên ổ D mạng
                     \$sourcePath = "${env.SHARE_PATH}\\${params.CHON_PHAN_MEM}"
-                    if (-not (Test-Path \$sourcePath)) {
-                        \$sourcePath = "${env.SHARE_PATH_ALT}\\${params.CHON_PHAN_MEM}"
-                    }
                     
                     Write-Host "Đang tải dữ liệu từ: \$sourcePath về thư mục tạm trên máy đích..."
                     Copy-Item -Path "\$sourcePath\\*" -Destination \$targetPath -Recurse -Force
