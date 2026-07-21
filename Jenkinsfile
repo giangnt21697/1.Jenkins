@@ -71,6 +71,26 @@ pipeline {
             }
         }
 
+        stage('Debug') {
+    steps {
+        powershell '''
+            Write-Host "===== DEBUG ====="
+
+            whoami
+
+            Write-Host "Current User:"
+            [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+
+            Write-Host "Create folder test..."
+
+            New-Item -Path "C:\\It-Support\\SCM" -ItemType Directory -Force -ErrorAction Stop
+
+            Write-Host "Folder exists:"
+            Test-Path "C:\\It-Support\\SCM"
+        '''
+    }
+}
+
         stage('2. Download file về folder tạo trên máy đích (ẩn folder)') {
             steps {
                 echo "=== KHỞI TẠO THƯ MỤC CỐ ĐỊNH VÀ TẢI BỘ CÀI VỀ MÁY ĐÍCH ==="
