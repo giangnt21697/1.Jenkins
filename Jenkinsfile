@@ -17,6 +17,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
+                checkout scm
                 echo "===== Source code đã được Jenkins checkout ====="
             }
         }
@@ -26,7 +27,7 @@ pipeline {
                 echo "===== Prepare Folder ====="
 
                 powershell """
-                    .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}'
+                    .\\scripts\\prepare.ps1 -Software "${params.SOFTWARE}"
                 """
             }
         }
@@ -36,7 +37,7 @@ pipeline {
                 echo "===== Install Software ====="
 
                 powershell """
-                    .\\scripts\\install.ps1 -Software '${params.SOFTWARE}'
+                    .\\scripts\\install.ps1 -Software "${params.SOFTWARE}"
                 """
             }
         }
@@ -46,11 +47,11 @@ pipeline {
     post {
 
         success {
-            echo "===== DEBUG SUCCESS ====="
+            echo "===== PIPELINE SUCCESS ====="
         }
 
         failure {
-            echo "===== DEBUG FAILED ====="
+            echo "===== PIPELINE FAILED ====="
         }
 
     }
