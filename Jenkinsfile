@@ -1,44 +1,44 @@
 pipeline {
     agent any
 
-    // Cấu hình chung cho toàn bộ Pipeline
     options {
-        timeout(time: 1, unit: 'HOURS') // Tổng thời gian chạy không quá 1 tiếng
-        timestamps() // In thêm thời gian (giờ:phút:giây) vào đầu mỗi dòng Log
+        timeout(time: 1, unit: 'HOURS')
+        timestamps() 
     }
 
     stages {
         stage('Tải thư viện & Kiểm tra mạng') {
             options {
-                retry(3) // Nếu stage này lỗi, tự động chạy lại tối đa 3 lần
-                timeout(time: 2, unit: 'MINUTES') // Stage này không được chạy quá 2 phút
+                retry(2)
+                timeout(time: 2, unit: 'MINUTES')
             }
             steps {
-                echo '=== ĐANG KIỂM TRA KẾT NỐI MẠNG ĐẾN SERVER MÔ PHỎNG ==='
-                // Lệnh ping kiểm tra kết nối mạng trên Windows
+                echo '=== ĐANG KIỂM TRA KẾT NỐI MẠNG ==='
                 bat 'ping google.com -n 2'
             }
         }
 
-        stage('Thực thi kịch bản chính') {
+        // STAGE MỚI: Chỉ chạy bước này nếu chạy trên nhánh chính (main)
+        stage('Triển khai môi trường Thật (Production)') {
+            when {
+                branch 'main' // Điều kiện: Tên nhánh hiện tại phải là main
+            }
             steps {
-                echo '=== ĐANG CHẠY CÁC CÂU LỆNH CHÍNH ==='
-                bat 'echo Xin chao! Quy trinh dang dien ra on dinh.'
+                echo '🚀 [CONDITIONAL] Thỏa mãn điều kiện nhánh main! Đang triển khai...'
+                bat 'echo Da deploy thanh cong len Production Server.'
             }
         }
     }
 
-    // Luôn luôn chạy sau khi các stage kết thúc (Dọn dẹp hệ thống)
     post {
         always {
-            echo '=== BƯỚC DỌN DẸP HỆ THỐNG (ALWAYS RUN) ==='
-            echo 'Đang xóa các file tạm và giải phóng bộ nhớ trên Windows...'
+            echo '=== BƯỚC DỌN DẸP HỆ THỐNG ==='
         }
         success {
-            echo '🎉 [SUCCESS] Mọi thứ chạy hoàn hảo!'
+            echo '🎉 [SUCCESS] Pipeline chạy hoàn hảo!'
         }
         failure {
-            echo '❌ [FAILURE] Pipeline bị lỗi ở một bước nào đó, hãy kiểm tra lại!'
+            echo '❌ [FAILURE] Có lỗi xảy ra!'
         }
     }
 }
