@@ -39,7 +39,7 @@ pipeline {
                 echo "===== Install Software ====="
 
                 powershell '''
-                    .\\scripts\\install.ps1
+                    .\\scripts\\install.ps1 -Software "${params.SOFTWARE}"
                 '''
             }
         }
