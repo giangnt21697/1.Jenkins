@@ -24,13 +24,12 @@ pipeline {
             steps {
                 echo "===== Chạy scripts/debug.ps1 ====="
 
-                powershell """
-    .\\scripts\\prepare.ps1
+    powershell '''
+.\scripts\prepare.ps1 -Software "${params.SOFTWARE}"
 
-    .\\scripts\\download.ps1 `
-        -Software "${params.SOFTWARE}"
-"""
-            }
+.\scripts\install.ps1 -Software "${params.SOFTWARE}"
+'''
+}
         }
 
     }
