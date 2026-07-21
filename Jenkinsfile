@@ -22,7 +22,7 @@ pipeline {
                         if(shareFolder.exists()) {
                             shareFolder.eachDir { dir -> softwareList.add(dir.name) }
                         } else {
-                            def shareFolderAlt = new File("\\\\\\\\10.2.15.93\\\\Giangnt\\\\Setup")
+                            def shareFolderAlt = new File("\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup")
                             if(shareFolderAlt.exists()) {
                                 shareFolderAlt.eachDir { dir -> softwareList.add(dir.name) }
                             } else {
@@ -47,7 +47,7 @@ pipeline {
 
     environment {
         SHARE_PATH = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
-        SHARE_PATH_ALT = '\\\\10.2.15.93\\Giangnt\\Setup'
+        SHARE_PATH_ALT = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
         TARGET_DIR = 'C:\\It-Support\\SCM' 
     }
 
