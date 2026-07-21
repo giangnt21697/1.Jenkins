@@ -25,24 +25,24 @@ pipeline {
         }
 
         stage('Prepare Folder') {
-    steps {
-        echo "===== Prepare Folder ====="
+            steps {
+                echo "===== Prepare Folder ====="
 
-        powershell '''
-            .\\scripts\\prepare.ps1 -Software "${params.SOFTWARE}"
-        '''
-    }
-}
+                powershell """
+                    .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}'
+                """
+            }
+        }
 
-stage('Install Software') {
-    steps {
-        echo "===== Install Software ====="
+        stage('Install Software') {
+            steps {
+                echo "===== Install Software ====="
 
-        powershell '''
-            .\\scripts\\install.ps1 -Software "${params.SOFTWARE}"
-        '''
-    }
-}
+                powershell """
+                    .\\scripts\\install.ps1 -Software '${params.SOFTWARE}'
+                """
+            }
+        }
 
         stage('Cleanup') {
             steps {
