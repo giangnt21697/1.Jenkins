@@ -1,30 +1,31 @@
 $TargetFolder = "C:\It-Support\SCM"
-$ShareFolder  = "\\10.2.15.93\Setup"
+$SourceFolder = "\\10.2.15.93\Setup\3CX"
 
-Write-Host "===== PREPARE FOLDER ====="
+Write-Host "===== DOWNLOAD TEST ====="
 
 New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null
 attrib +h $TargetFolder
 
-Write-Host "Target Folder : $TargetFolder"
+# Xóa file cũ (không xóa folder)
+Get-ChildItem $TargetFolder -Force -ErrorAction SilentlyContinue |
+    Remove-Item -Force -Recurse
 
-if(Test-Path $ShareFolder)
-{
-    Write-Host "Share Connected."
+Write-Host "Copy từ:"
+Write-Host $SourceFolder
 
-    $Software = Get-ChildItem $ShareFolder -Directory
+Copy-Item `
+    -Path "$SourceFolder\*" `
+    -Destination $TargetFolder `
+    -Recurse `
+    -Force
 
-    Write-Host "Total Software : $($Software.Count)"
+Write-Host ""
 
-    $Software |
-        Select-Object -First 5 |
-        ForEach-Object{
-            Write-Host " - $($_.Name)"
-        }
+Write-Host "Các file đã copy:"
+
+Get-ChildItem $TargetFolder -Recurse | ForEach-Object{
+    Write-Host $_.FullName
 }
-else
-{
-    throw "Cannot access $ShareFolder"
-}
 
-Write-Host "===== DONE ====="
+Write-Host ""
+Write-Host "===== DOWNLOAD SUCCESS ====="
