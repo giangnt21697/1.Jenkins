@@ -18,7 +18,7 @@ pipeline {
                 echo "===== Chạy scripts/debug.ps1 ====="
 
                 powershell '''
-                    .\\scripts\\debug.ps1
+                    .\\scripts\\prepare.ps1
                 '''
             }
         }
