@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     parameters {
-        // 1. Sửa lỗi phân tích chuỗi Groovy để giữ nguyên đường dẫn ổ D mạng thực tế của bạn
+        // 1. Quét tự động danh sách phần mềm từ đường dẫn mạng tiêu chuẩn mới
         activeChoice(
             name: 'CHON_PHAN_MEM',
             choiceType: 'PT_SINGLE_SELECT',
@@ -18,8 +18,8 @@ pipeline {
                         import groovy.io.FileType
                         def softwareList = []
                         
-                        // Sử dụng cơ chế chuỗi an toàn để Windows nhận diện chính xác ổ d$ ẩn quản trị
-                        String networkPath = "\\\\\\\\10.2.15.93\\\\d$\\\\Giangnt\\\\Setup"
+                        // SỬA DÒNG 19: Cập nhật đường dẫn mạng mới đã cấu hình Share thường
+                        String networkPath = "\\\\\\\\10.2.15.93\\\\Setup"
                         def shareFolder = new File(networkPath) 
                         
                         if(shareFolder.exists()) {
@@ -44,8 +44,8 @@ pipeline {
     }
 
     environment {
-        // Đường dẫn mạng chuẩn hóa tuyệt đối cho các stage thực thi PowerShell/Windows
-        SHARE_PATH = '\\\\10.2.15.93\\d$\\Giangnt\\Setup'
+        // SỬA DÒNG 43 & 44: Cập nhật biến môi trường sang đường dẫn mới gọn nhẹ
+        SHARE_PATH = '\\\\10.2.15.93\\Setup'
         TARGET_DIR = 'C:\\It-Support\\SCM' 
     }
 
@@ -90,7 +90,7 @@ pipeline {
                         Write-Host "Thư mục cố định đã sẵn sàng và đang ở trạng thái ẩn."
                     }
                     
-                    # Trỏ thẳng đến thư mục con của phần mềm được chọn trên ổ D mạng
+                    # Trỏ thẳng đến thư mục con của phần mềm được chọn trên ổ mạng mới
                     \$sourcePath = "${env.SHARE_PATH}\\${params.CHON_PHAN_MEM}"
                     
                     Write-Host "Đang tải dữ liệu từ: \$sourcePath về thư mục tạm trên máy đích..."
