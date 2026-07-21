@@ -1,23 +1,21 @@
 pipeline {
     agent any
 
-    // 1. Quản lý biến môi trường tập trung
     environment {
         APP_NAME = 'MyWindowsApp'
         DEPLOY_DIR = 'C:\\Deployments\\MyWindowsApp'
         TARGET_BRANCH = 'main'
     }
 
-    // 2. Kiểm soát luồng chạy và thời gian toàn cục
     options {
-        timeout(time: 30, unit: 'MINUTES') // Toàn bộ kịch bản không quá 30 phút
-        timestamps() // Bật ghi nhận thời gian cho mọi stage
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps() 
     }
 
     stages {
         stage('Khởi tạo & Kiểm tra mạng') {
             options {
-                retry(2) // Tự động thử lại tối đa 2 lần nếu lỗi mạng
+                retry(2) 
                 timeout(time: 2, unit: 'MINUTES')
             }
             steps {
@@ -40,11 +38,13 @@ pipeline {
             }
         }
 
-        // 3. Stage chạy có điều kiện nâng cao
         stage('Triển khai hệ thống (Deploy)') {
             when {
-                // Kiểm tra nếu nhánh hiện tại trùng với TARGET_BRANCH đã khai báo ở trên
-                expression { return env.BRANCH_NAME == env.TARGET_BRANCH || bat(script: 'git rev-parse --abbrev-ref HEAD', returnStdout: true).trim() == env.TARGET_BRANCH }
+                // Sửa đổi: Sử dụng đường dẫn Git tuyệt đối để tránh lỗi môi trường Windows
+                expression { 
+                    return env.BRANCH_NAME == env.TARGET_BRANCH || 
+                    bat(script: '"C:\\Program Files\\Git\\bin\\git.exe" rev-parse --abbrev-ref HEAD', returnStdout: true).trim() == env.TARGET_BRANCH 
+                }
             }
             steps {
                 echo "🚀 [DEPLOY] Thỏa mãn điều kiện nhánh ${env.TARGET_BRANCH}!"
@@ -54,7 +54,6 @@ pipeline {
         }
     }
 
-    // 4. Xử lý trạng thái sau khi kết thúc pipeline
     post {
         always {
             echo '=== BƯỚC DỌN DẸP HỆ THỐNG VÀ GIẢI PHÓNG BỘ NHỚ ==='
