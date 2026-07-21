@@ -2,10 +2,12 @@ pipeline {
     agent any
 
     parameters {
-        string(
+        choice(
             name: 'SOFTWARE',
-            defaultValue: '3CX',
-            description: 'Tên thư mục phần mềm trong \\\\10.2.15.93\\Setup'
+            choices: [
+                '3CX'
+            ],
+            description: 'Select Software'
         )
     }
 
@@ -26,9 +28,9 @@ pipeline {
             steps {
                 echo "===== Prepare Folder ====="
 
-                powershell """
-                    .\\scripts\\prepare.ps1 -Software "${params.SOFTWARE}"
-                """
+                powershell '''
+                    .\\scripts\\prepare.ps1 -Software "${env:SOFTWARE}"
+                '''
             }
         }
 
@@ -36,16 +38,38 @@ pipeline {
             steps {
                 echo "===== Install Software ====="
 
-                powershell """
-                    .\\scripts\\install.ps1 -Software "${params.SOFTWARE}"
-                """
+                powershell '''
+                    .\\scripts\\install.ps1
+                '''
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                echo "===== Cleanup ====="
+
+                powershell '''
+                    $Folder = "C:\\It-Support\\SCM"
+
+                    if(Test-Path $Folder)
+                    {
+                        Get-ChildItem $Folder -Force |
+                            Remove-Item -Recurse -Force
+
+                        Write-Host ""
+                        Write-Host "===== CLEANUP SUCCESS ====="
+                    }
+                    else
+                    {
+                        Write-Host "Folder not found."
+                    }
+                '''
             }
         }
 
     }
 
     post {
-
         success {
             echo "===== PIPELINE SUCCESS ====="
         }
@@ -53,6 +77,5 @@ pipeline {
         failure {
             echo "===== PIPELINE FAILED ====="
         }
-
     }
 }
