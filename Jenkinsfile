@@ -1,13 +1,14 @@
 pipeline {
     agent any
-    
+
     parameters {
-    string(
-        name: 'SOFTWARE',
-        defaultValue: '3CX',
-        description: 'Tên thư mục phần mềm trong \\\\10.2.15.93\\Setup'
-    )
-}
+        string(
+            name: 'SOFTWARE',
+            defaultValue: '3CX',
+            description: 'Tên thư mục phần mềm trong \\\\10.2.15.93\\Setup'
+        )
+    }
+
     options {
         timestamps()
     }
@@ -20,16 +21,26 @@ pipeline {
             }
         }
 
-        stage('Run Debug Script') {
-    steps {
-        echo "===== Chạy scripts/debug.ps1 ====="
+        stage('Prepare Folder') {
+            steps {
+                echo "===== Prepare Folder ====="
 
-        powershell '''
-            .\scripts\prepare.ps1 -Software "${params.SOFTWARE}"
-            .\scripts\install.ps1 -Software "${params.SOFTWARE}"
-        '''
-    }
-}
+                powershell """
+                    .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}'
+                """
+            }
+        }
+
+        stage('Install Software') {
+            steps {
+                echo "===== Install Software ====="
+
+                powershell """
+                    .\\scripts\\install.ps1 -Software '${params.SOFTWARE}'
+                """
+            }
+        }
+
     }
 
     post {
