@@ -9,15 +9,19 @@ Write-Host "===== INSTALL ====="
 Write-Host ""
 Write-Host "Software : $Software"
 
+# Tìm đúng file installer theo tên phần mềm được chọn
 $Installer = Get-ChildItem `
     -Path $TargetFolder `
     -Recurse `
-    -Include *.msi,*.exe |
+    -Include *.msi, *.exe |
+    Where-Object {
+        $_.BaseName -like "*$Software*"
+    } |
     Select-Object -First 1
 
 if ($null -eq $Installer)
 {
-    throw "Không tìm thấy file cài đặt (.msi hoặc .exe)"
+    throw "Không tìm thấy installer cho phần mềm: $Software"
 }
 
 Write-Host ""
@@ -87,7 +91,6 @@ switch ($Installer.Extension.ToLower())
                 if($Process.ExitCode -eq 0)
                 {
                     Write-Host "Silent switch accepted."
-
                     $Installed = $true
                     break
                 }
