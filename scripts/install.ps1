@@ -9,13 +9,12 @@ Write-Host "===== INSTALL ====="
 Write-Host ""
 Write-Host "Software : $Software"
 
-# Tìm đúng file installer theo tên phần mềm được chọn
+# Chỉ lấy bộ cài đã được Prepare copy vào
 $Installer = Get-ChildItem `
     -Path $TargetFolder `
-    -Recurse `
-    -Include *.msi, *.exe |
+    -File |
     Where-Object {
-        $_.BaseName -like "*$Software*"
+        $_.Extension -in ".exe", ".msi"
     } |
     Select-Object -First 1
 
