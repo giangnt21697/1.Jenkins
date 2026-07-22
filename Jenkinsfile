@@ -1,14 +1,6 @@
 pipeline {
     agent any
 
-    parameters {
-    string(
-        name: 'SOFTWARE',
-        defaultValue: '3CX',
-        description: 'Tên thư mục phần mềm trong \\\\10.2.15.93\\Setup'
-    )
-}
-
     options {
         timestamps()
     }
