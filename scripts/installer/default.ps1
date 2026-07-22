@@ -1,26 +1,45 @@
-param(
-    [string]$Software
-)
+# ============================================================
+# DEFAULT INSTALLER
+#
+# File này chứa logic cài đặt mặc định.
+#
+# install.ps1 sẽ:
+#   - tìm installer
+#   - truyền $Installer vào file này
+#
+# File này KHÔNG tự tìm installer.
+#
+# Chỉ xử lý:
+#   MSI
+#   EXE
+#
+# Nếu phần mềm có yêu cầu đặc biệt
+# thì tạo file riêng:
+#
+# installer\Android_Studio.ps1
+# installer\Office.ps1
+# installer\VMware.ps1
+#
+# ============================================================
 
-$TargetFolder = "C:\It-Support\SCM"
+
+param(
+    [string]$Software,
+
+    # File installer đã được install.ps1 tìm sẵn
+    [System.IO.FileInfo]$Installer
+)
 
 Write-Host ""
 Write-Host "===== INSTALL ====="
 Write-Host ""
 Write-Host "Software : $Software"
+Write-Host "Installer : $($Installer.Name)"
 
-# Chỉ lấy bộ cài đã được Prepare copy vào
-$Installer = Get-ChildItem `
-    -Path $TargetFolder `
-    -File |
-    Where-Object {
-        $_.Extension -in ".exe", ".msi"
-    } |
-    Select-Object -First 1
-
+# install.ps1 phải truyền vào đúng file installer
 if ($null -eq $Installer)
 {
-    throw "Không tìm thấy installer cho phần mềm: $Software"
+    throw "Installer chưa được truyền vào default.ps1"
 }
 
 Write-Host ""
