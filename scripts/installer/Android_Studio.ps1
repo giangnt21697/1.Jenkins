@@ -1,32 +1,13 @@
 # ============================================================
-# DEFAULT INSTALLER
+# Android Studio Installer
 #
-# File này chứa logic cài đặt mặc định.
-#
-# install.ps1 sẽ:
-#   - tìm installer
-#   - truyền $Installer vào file này
-#
-# File này KHÔNG tự tìm installer.
-#
-# Chỉ xử lý:
-#   MSI
-#   EXE
-#
-# Nếu phần mềm có yêu cầu đặc biệt
-# thì tạo file riêng:
-#
-# installer\Android_Studio.ps1
-# installer\Office.ps1
-# installer\VMware.ps1
+# Custom installer cho Android Studio.
+# Sử dụng khi phần mềm cần cách cài riêng.
 #
 # ============================================================
 
-
 param(
     [string]$Software,
-
-    # File installer đã được install.ps1 tìm sẵn
     [System.IO.FileInfo]$Installer
 )
 
@@ -34,39 +15,29 @@ Write-Host ""
 Write-Host "===== INSTALL ====="
 Write-Host ""
 Write-Host "Software : $Software"
-Write-Host "Installer : $($Installer.Name)"
 
-# install.ps1 phải truyền vào đúng file installer
-if ($null -eq $Installer)
+if (-not $Installer)
 {
-    throw "Installer chưa được truyền vào default.ps1"
+    throw "Installer not found."
 }
 
 Write-Host ""
-Write-Host "Found Installer"
-Write-Host "Name      : $($Installer.Name)"
-Write-Host "Extension : $($Installer.Extension)"
-Write-Host "Full Path : $($Installer.FullName)"
+Write-Host "Installer : $($Installer.Name)"
 Write-Host ""
 
 switch ($Installer.Extension.ToLower())
 {
     ".msi"
     {
-        Write-Host "Installer Type : MSI"
-        Write-Host "Start Installing..."
-
         $Process = Start-Process `
-            -FilePath "msiexec.exe" `
+            msiexec.exe `
             -ArgumentList "/i `"$($Installer.FullName)`" /qn /norestart" `
             -Wait `
             -PassThru
 
-        Write-Host "Exit Code : $($Process.ExitCode)"
-
-        if($Process.ExitCode -ne 0)
+        if ($Process.ExitCode -ne 0)
         {
-            throw "MSI cài đặt thất bại."
+            throw "MSI installation failed."
         }
 
         break
@@ -74,54 +45,19 @@ switch ($Installer.Extension.ToLower())
 
     ".exe"
     {
-        Write-Host "Installer Type : EXE"
+        Write-Host "Android Studio Custom Install"
 
-        $SilentArgs = @(
-            "/S",
-            "/s",
-            "/silent",
-            "/SILENT",
-            "/quiet",
-            "/VERYSILENT",
-            "/verysilent",
-            "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
-            "/silent /install"
-        )
+        $Process = Start-Process `
+            -FilePath $Installer.FullName `
+            -ArgumentList "/S" `
+            -Wait `
+            -PassThru
 
-        $Installed = $false
+        Write-Host "Exit Code : $($Process.ExitCode)"
 
-        foreach($Arg in $SilentArgs)
+        if ($Process.ExitCode -ne 0)
         {
-            Write-Host ""
-            Write-Host "Trying : $Arg"
-
-            try
-            {
-                $Process = Start-Process `
-                    -FilePath $Installer.FullName `
-                    -ArgumentList $Arg `
-                    -Wait `
-                    -PassThru `
-                    -ErrorAction Stop
-
-                Write-Host "Exit Code : $($Process.ExitCode)"
-
-                if($Process.ExitCode -eq 0)
-                {
-                    Write-Host "Silent switch accepted."
-                    $Installed = $true
-                    break
-                }
-            }
-            catch
-            {
-                Write-Host "Failed."
-            }
-        }
-
-        if(-not $Installed)
-        {
-            throw "Không tìm được silent switch phù hợp."
+            throw "Android Studio installation failed."
         }
 
         break
@@ -129,7 +65,7 @@ switch ($Installer.Extension.ToLower())
 
     default
     {
-        throw "Không hỗ trợ định dạng $($Installer.Extension)"
+        throw "Unsupported installer type."
     }
 }
 
