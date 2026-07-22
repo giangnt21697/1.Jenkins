@@ -11,34 +11,52 @@ Write-Host ""
 
 Write-Host "Software : $Software"
 
+# Tạo thư mục đích nếu chưa có
 New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null
 
 attrib +h $TargetFolder
 
-Get-ChildItem $TargetFolder -Force |
+# Xóa toàn bộ file cũ
+Get-ChildItem $TargetFolder -Force -ErrorAction SilentlyContinue |
     Remove-Item -Recurse -Force
 
-$Source = Join-Path $ShareFolder $Software
+# Thư mục phần mềm được chọn
+$SourceFolder = Join-Path $ShareFolder $Software
 
 Write-Host ""
-Write-Host "Source : $Source"
+Write-Host "Source Folder : $SourceFolder"
 
-if(!(Test-Path $Source))
+if (!(Test-Path $SourceFolder))
 {
-    throw "Không tìm thấy thư mục phần mềm: $Source"
+    throw "Không tìm thấy thư mục phần mềm: $SourceFolder"
 }
 
+# Chỉ lấy file cài đặt đầu tiên
+$Installer = Get-ChildItem `
+    -Path $SourceFolder `
+    -File `
+    -Include *.exe,*.msi |
+    Select-Object -First 1
+
+if ($null -eq $Installer)
+{
+    throw "Không tìm thấy file .exe hoặc .msi trong $SourceFolder"
+}
+
+Write-Host ""
+Write-Host "Found Installer : $($Installer.Name)"
+
+# Chỉ copy đúng file cài đặt
 Copy-Item `
-    "$Source\*" `
-    $TargetFolder `
-    -Recurse `
+    -Path $Installer.FullName `
+    -Destination $TargetFolder `
     -Force
 
 Write-Host ""
-Write-Host "Copied Files"
+Write-Host "Copied File"
 
-Get-ChildItem $TargetFolder -Recurse |
-    Select Name
+Get-ChildItem $TargetFolder |
+    Select Name, Length
 
 Write-Host ""
 Write-Host "===== PREPARE SUCCESS ====="
