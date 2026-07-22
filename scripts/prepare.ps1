@@ -34,9 +34,18 @@ if (!(Test-Path $SourceFolder))
 # Chỉ lấy file cài đặt đầu tiên
 $Installer = Get-ChildItem `
     -Path $SourceFolder `
-    -File `
-    -Include *.exe,*.msi |
+    -Filter *.exe `
+    -File |
     Select-Object -First 1
+
+if ($null -eq $Installer)
+{
+    $Installer = Get-ChildItem `
+        -Path $SourceFolder `
+        -Filter *.msi `
+        -File |
+        Select-Object -First 1
+}
 
 if ($null -eq $Installer)
 {
