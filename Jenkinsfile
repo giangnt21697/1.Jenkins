@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     parameters {
-        choice(
-            name: 'SOFTWARE',
-            choices: [
-                '3CX'
-            ],
-            description: 'Select Software'
-        )
-    }
+    string(
+        name: 'SOFTWARE',
+        defaultValue: '3CX',
+        description: 'Tên thư mục phần mềm trong \\\\10.2.15.93\\Setup'
+    )
+}
 
     options {
         timestamps()
