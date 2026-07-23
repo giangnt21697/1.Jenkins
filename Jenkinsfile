@@ -8,7 +8,17 @@ pipeline {
     // Giao diện nhập liệu khi bấm "Build with Parameters"
     parameters {
         string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname).')
-        string(name: 'SOFTWARE', defaultValue: '', description: 'Nhập tên thư mục phần mềm (Ví dụ: Dbeaver, Greenshot...)')
+        
+        // Đổi từ string sang choice để tạo Dropdown List
+        choice(name: 'SOFTWARE', choices: [
+            '3CX', 'Anaconda', 'Android_Studio', 'Appium', 'Chrome', 
+            'Dbeaver', 'Draw.io', 'eSigner', 'Figma', 'Git', 
+            'Greenshot', 'IDEA', 'iTaxViewer', 'Java', 'LibreOffice', 
+            'Lightshot', 'MobaXterm', 'MongoDB', 'Node.js', 'Notepad++', 
+            'nvm', 'PBI Desktop', 'Pg4dmin', 'Podman', 'Postgresql', 
+            'Postman', 'Power Automate', 'Python', 'SoapUI', 'Sourcetree', 
+            'VSCode', 'WinSCP', 'Xmind'
+        ], description: 'Chọn phần mềm cần cài đặt từ danh sách')
     }
 
     stages {
