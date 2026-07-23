@@ -1,6 +1,41 @@
 pipeline {
     agent any
 
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+    }
+
+    // THÊM BLOCK PARAMETERS VÀO ĐÂY
+    parameters {
+        string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname. Có thể nhập Username/MAC nếu hệ thống đã cấu hình script phân giải).')
+        string(name: 'SOFTWARE', defaultValue: '', description: 'Nhập tên thư mục phần mềm (Ví dụ: Dbeaver, Greenshot...)')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "===== Source code đã được Jenkins checkout ====="
+            }
+        }
+
+        stage('Prepare Folder on Target') {
+            steps {
+                echo "===== Prepare Folder on ${params.TARGET} ====="
+                // Truyền thêm biến Target vào script
+                powershell """
+                    .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}' -Target '${params.TARGET}'
+                """
+            }
+        }
+        
+        // ... Các stage cài đặt cũng sẽ nhận thêm -Target tương tự ...
+    }
+}
+    
     options {
         timestamps()
     }
