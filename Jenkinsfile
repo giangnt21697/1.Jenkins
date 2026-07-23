@@ -10,7 +10,7 @@ pipeline {
 
     // THÊM BLOCK PARAMETERS VÀO ĐÂY
     parameters {
-        string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname. Có thể nhập Username/MAC nếu hệ thống đã cấu hình script phân giải).')
+        string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname.).')
         string(name: 'SOFTWARE', defaultValue: '', description: 'Nhập tên thư mục phần mềm (Ví dụ: Dbeaver, Greenshot...)')
     }
 
