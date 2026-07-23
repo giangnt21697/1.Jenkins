@@ -1,53 +1,25 @@
 # ============================================================
-# DEFAULT INSTALLER
-#
-# File này chứa logic cài đặt mặc định.
-#
-# install.ps1 sẽ:
-#   - tìm installer
-#   - truyền $Installer vào file này
-#
-# File này KHÔNG tự tìm installer.
-#
-# Chỉ xử lý:
-#   MSI
-#   EXE
-#
-# Nếu phần mềm có yêu cầu đặc biệt
-# thì tạo file riêng:
-#
-# installer\Android_Studio.ps1
-# installer\Office.ps1
-# installer\VMware.ps1
-#
+# DEFAULT INSTALLER (Optimized by Giang IT)
 # ============================================================
-
 
 param(
     [string]$Software,
-
-    # File installer đã được install.ps1 tìm sẵn
     [System.IO.FileInfo]$Installer
 )
 
 Write-Host ""
 Write-Host "===== INSTALL ====="
-Write-Host ""
-Write-Host "Software : $Software"
+Write-Host "Software  : $Software"
 Write-Host "Installer : $($Installer.Name)"
 
-# install.ps1 phải truyền vào đúng file installer
-if ($null -eq $Installer)
-{
+if ($null -eq $Installer) {
     throw "Installer chưa được truyền vào default.ps1"
 }
 
-Write-Host ""
-Write-Host "Found Installer"
+Write-Host "`nFound Installer"
 Write-Host "Name      : $($Installer.Name)"
 Write-Host "Extension : $($Installer.Extension)"
-Write-Host "Full Path : $($Installer.FullName)"
-Write-Host ""
+Write-Host "Full Path : $($Installer.FullName)`n"
 
 switch ($Installer.Extension.ToLower())
 {
@@ -64,9 +36,15 @@ switch ($Installer.Extension.ToLower())
 
         Write-Host "Exit Code : $($Process.ExitCode)"
 
-        if($Process.ExitCode -ne 0)
-        {
-            throw "MSI cài đặt thất bại."
+        # Danh sách các Exit Code được coi là thành công của MSI
+        $SuccessCodes = @(0, 1641, 3010)
+        
+        if ($Process.ExitCode -notin $SuccessCodes) {
+            throw "MSI cài đặt thất bại với mã lỗi: $($Process.ExitCode). Vui lòng kiểm tra lại log."
+        }
+        
+        if ($Process.ExitCode -eq 3010) {
+            Write-Host "Cảnh báo: Phần mềm yêu cầu khởi động lại máy để hoàn tất!" -ForegroundColor Yellow
         }
 
         break
@@ -75,53 +53,55 @@ switch ($Installer.Extension.ToLower())
     ".exe"
     {
         Write-Host "Installer Type : EXE"
+        Write-Host "LƯU Ý: Đang dùng chế độ thử tham số (Brute-force). Có thể gây treo nếu installer mở giao diện GUI." -ForegroundColor Yellow
 
         $SilentArgs = @(
-            "/S",
-            "/s",
-            "/silent",
-            "/SILENT",
-            "/quiet",
-            "/VERYSILENT",
-            "/verysilent",
-            "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART",
-            "/silent /install"
+            "/S", "/s", "/silent", "/SILENT", "/quiet", 
+            "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART", "/silent /install"
         )
 
         $Installed = $false
 
         foreach($Arg in $SilentArgs)
         {
-            Write-Host ""
-            Write-Host "Trying : $Arg"
-
+            Write-Host "`nTrying : $Arg"
+            
             try
             {
+                # Sử dụng timeout 10 phút (600 giây) để chống treo script nếu GUI hiện lên
                 $Process = Start-Process `
                     -FilePath $Installer.FullName `
                     -ArgumentList $Arg `
-                    -Wait `
                     -PassThru `
                     -ErrorAction Stop
 
+                $Process.WaitForExit(600000) | Out-Null
+
+                # Nếu process chưa tắt sau 10 phút, buộc đóng và thử tham số khác
+                if (-not $Process.HasExited) {
+                    Write-Host "Process bị treo (Timeout). Đang dọn dẹp..." -ForegroundColor Red
+                    $Process.Kill()
+                    continue
+                }
+
                 Write-Host "Exit Code : $($Process.ExitCode)"
 
-                if($Process.ExitCode -eq 0)
+                if($Process.ExitCode -eq 0 -or $Process.ExitCode -eq 1223)
                 {
-                    Write-Host "Silent switch accepted."
+                    Write-Host "Silent switch accepted: $Arg" -ForegroundColor Green
                     $Installed = $true
                     break
                 }
             }
             catch
             {
-                Write-Host "Failed."
+                Write-Host "Failed to start process." -ForegroundColor Red
             }
         }
 
         if(-not $Installed)
         {
-            throw "Không tìm được silent switch phù hợp."
+            throw "Không tìm được silent switch phù hợp hoặc quá trình cài đặt gặp lỗi."
         }
 
         break
@@ -133,5 +113,4 @@ switch ($Installer.Extension.ToLower())
     }
 }
 
-Write-Host ""
-Write-Host "===== INSTALL SUCCESS ====="
+Write-Host "`n===== INSTALL SUCCESS =====" -ForegroundColor Green
