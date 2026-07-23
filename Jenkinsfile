@@ -1,16 +1,13 @@
 pipeline {
     agent any
 
-pipeline {
-    agent any
-
     options {
         timestamps()
     }
 
-    // THÊM BLOCK PARAMETERS VÀO ĐÂY
+    // Giao diện nhập liệu khi bấm "Build with Parameters"
     parameters {
-        string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname.).')
+        string(name: 'TARGET', defaultValue: '', description: 'Nhập thông tin máy đích (Ưu tiên: IP máy hoặc Hostname).')
         string(name: 'SOFTWARE', defaultValue: '', description: 'Nhập tên thư mục phần mềm (Ví dụ: Dbeaver, Greenshot...)')
     }
 
@@ -25,80 +22,45 @@ pipeline {
         stage('Prepare Folder on Target') {
             steps {
                 echo "===== Prepare Folder on ${params.TARGET} ====="
-                // Truyền thêm biến Target vào script
                 powershell """
                     .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}' -Target '${params.TARGET}'
                 """
             }
         }
-        
-        // ... Các stage cài đặt cũng sẽ nhận thêm -Target tương tự ...
-    }
-}
-    
-    options {
-        timestamps()
-    }
 
-    stages {
-
-        stage('Checkout') {
+        stage('Install Software on Target') {
             steps {
-                checkout scm
-                echo "===== Source code đã được Jenkins checkout ====="
-            }
-        }
-
-        stage('Prepare Folder') {
-            steps {
-                echo "===== Prepare Folder ====="
-
+                echo "===== Install Software on ${params.TARGET} ====="
                 powershell """
-                    .\\scripts\\prepare.ps1 -Software '${params.SOFTWARE}'
+                    .\\scripts\\install.ps1 -Software '${params.SOFTWARE}' -Target '${params.TARGET}'
                 """
             }
         }
 
-        stage('Install Software') {
+        stage('Cleanup on Target') {
             steps {
-                echo "===== Install Software ====="
-
+                echo "===== Cleanup on ${params.TARGET} ====="
+                // Dọn dẹp từ xa thông qua đường dẫn mạng ẩn SMB (\\IP\c$)
                 powershell """
-                    .\\scripts\\install.ps1 -Software '${params.SOFTWARE}'
-                """
-            }
-        }
-
-        stage('Cleanup') {
-            steps {
-                echo "===== Cleanup ====="
-
-                powershell '''
-                    $Folder = "C:\\It-Support\\SCM"
-
-                    if(Test-Path $Folder)
-                    {
-                        Get-ChildItem $Folder -Force |
-                            Remove-Item -Recurse -Force
-
+                    \$Target = '${params.TARGET}'
+                    \$RemoteFolder = "\\\\\$Target\\c\$\\It-Support\\SCM"
+                    
+                    if(Test-Path \$RemoteFolder) {
+                        Get-ChildItem \$RemoteFolder -Force | Remove-Item -Recurse -Force
                         Write-Host ""
-                        Write-Host "===== CLEANUP SUCCESS ====="
+                        Write-Host "===== CLEANUP SUCCESS ON \${Target} ====="
+                    } else {
+                        Write-Host "Folder not found on target."
                     }
-                    else
-                    {
-                        Write-Host "Folder not found."
-                    }
-                '''
+                """
             }
         }
-
     }
 
     post {
         success {
             echo "===== PIPELINE SUCCESS ====="
         }
-
         failure {
             echo "===== PIPELINE FAILED ====="
         }
