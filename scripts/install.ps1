@@ -11,12 +11,20 @@ if ($Target -ne "") {
     Write-Host "Target   : $Target"
     Write-Host "Software : $Software"
 
-    Invoke-Command -ComputerName $Target -ScriptBlock {
-        param($sw)
-        & "C:\It-Support\SCM\scripts\install.ps1" -Software $sw
-    } -ArgumentList $Software
+    try {
+        # Thêm ErrorAction Stop để bắt lỗi kết nối ngay lập tức
+        Invoke-Command -ComputerName $Target -ErrorAction Stop -ScriptBlock {
+            param($sw)
+            & "C:\It-Support\SCM\scripts\install.ps1" -Software $sw
+        } -ArgumentList $Software
 
-    Write-Host "===== REMOTE INSTALLATION FINISHED ====="
+        Write-Host "===== REMOTE INSTALLATION FINISHED ====="
+    }
+    catch {
+        Write-Host "LỖI KẾT NỐI WINRM: Không thể ra lệnh cho máy $Target." -ForegroundColor Red
+        Write-Host "Chi tiết: $_" -ForegroundColor Red
+        throw "Remote Installation Failed!" # Ép Jenkins phải báo FAILED
+    }
     exit
 }
 
@@ -28,7 +36,6 @@ $TargetFolder = "C:\It-Support\SCM"
 Write-Host "`n===== LOCAL INSTALL (ON AGENT) ====="
 Write-Host "Software : $Software"
 
-# [ĐÃ FIX BUG] Dùng Where-Object để lấy Installer an toàn
 $Installer = Get-ChildItem -Path $TargetFolder -File | Where-Object { $_.Extension -in @(".exe", ".msi") } | Select-Object -First 1
 
 if ($null -eq $Installer) { throw "Không tìm thấy installer trên máy Client." }
