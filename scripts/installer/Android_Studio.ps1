@@ -1,11 +1,3 @@
-# ============================================================
-# Android Studio Installer
-#
-# Custom installer cho Android Studio.
-# Sử dụng khi phần mềm cần cách cài riêng.
-#
-# ============================================================
-
 param(
     [string]$Software,
     [System.IO.FileInfo]$Installer
@@ -14,60 +6,36 @@ param(
 Write-Host ""
 Write-Host "===== INSTALL ====="
 Write-Host ""
-Write-Host "Software : $Software"
-
-if (-not $Installer)
-{
-    throw "Installer not found."
-}
-
-Write-Host ""
+Write-Host "Software  : $Software"
 Write-Host "Installer : $($Installer.Name)"
 Write-Host ""
 
-switch ($Installer.Extension.ToLower())
+Write-Host "Android Studio Custom Install"
+
+$Arguments = @(
+    "/S",
+    "/AllUsers"
+)
+
+$Process = Start-Process `
+    -FilePath $Installer.FullName `
+    -ArgumentList $Arguments `
+    -Wait `
+    -PassThru
+
+Write-Host "Exit Code : $($Process.ExitCode)"
+
+switch ($Process.ExitCode)
 {
-    ".msi"
+    0
     {
-        $Process = Start-Process `
-            msiexec.exe `
-            -ArgumentList "/i `"$($Installer.FullName)`" /qn /norestart" `
-            -Wait `
-            -PassThru
-
-        if ($Process.ExitCode -ne 0)
-        {
-            throw "MSI installation failed."
-        }
-
-        break
-    }
-
-    ".exe"
-    {
-        Write-Host "Android Studio Custom Install"
-
-        $Process = Start-Process `
-            -FilePath $Installer.FullName `
-            -ArgumentList "/S" `
-            -Wait `
-            -PassThru
-
-        Write-Host "Exit Code : $($Process.ExitCode)"
-
-        if ($Process.ExitCode -ne 0)
-        {
-            throw "Android Studio installation failed."
-        }
-
+        Write-Host ""
+        Write-Host "===== INSTALL SUCCESS ====="
         break
     }
 
     default
     {
-        throw "Unsupported installer type."
+        throw "Android Studio installation failed. Exit Code: $($Process.ExitCode)"
     }
 }
-
-Write-Host ""
-Write-Host "===== INSTALL SUCCESS ====="
