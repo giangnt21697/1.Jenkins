@@ -1,71 +1,43 @@
 param(
-    [string]$Software
+    [string]$Software,
+    [string]$Target
 )
 
+if ([string]::IsNullOrWhiteSpace($Target)) { throw "LỖI: Vui lòng nhập Target (IP hoặc Hostname) của máy đích." }
+
 $ShareFolder  = "\\10.2.15.93\Setup"
-$TargetFolder = "C:\It-Support\SCM"
 
-Write-Host ""
-Write-Host "===== PREPARE ====="
-Write-Host ""
+# Đường dẫn mạng ẩn đến thẳng ổ C của máy Client
+$RemoteFolder = "\\$Target\c$\It-Support\SCM"
 
+Write-Host "`n===== PREPARE ON TARGET: $Target ====="
 Write-Host "Software : $Software"
 
-# Tạo thư mục đích nếu chưa có
-New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null
+# 1. Tạo thư mục đích trên máy Target nếu chưa có
+if (!(Test-Path $RemoteFolder)) {
+    New-Item -ItemType Directory -Path $RemoteFolder -Force | Out-Null
+}
 
-attrib +h $TargetFolder
+# Xóa toàn bộ file cũ (đề phòng kẹt)
+Get-ChildItem $RemoteFolder -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
 
-# Xóa toàn bộ file cũ
-Get-ChildItem $TargetFolder -Force -ErrorAction SilentlyContinue |
-    Remove-Item -Recurse -Force
-
-# Thư mục phần mềm được chọn
+# 2. Copy Installer từ Share Server sang Target
 $SourceFolder = Join-Path $ShareFolder $Software
+Write-Host "`nSource Folder : $SourceFolder"
 
-Write-Host ""
-Write-Host "Source Folder : $SourceFolder"
+if (!(Test-Path $SourceFolder)) { throw "Không tìm thấy thư mục phần mềm: $SourceFolder" }
 
-if (!(Test-Path $SourceFolder))
-{
-    throw "Không tìm thấy thư mục phần mềm: $SourceFolder"
-}
+$Installer = Get-ChildItem -Path $SourceFolder -File -Include *.exe, *.msi | Select-Object -First 1
+if ($null -eq $Installer) { throw "Không tìm thấy file .exe hoặc .msi trong $SourceFolder" }
 
-# Chỉ lấy file cài đặt đầu tiên
-$Installer = Get-ChildItem `
-    -Path $SourceFolder `
-    -Filter *.exe `
-    -File |
-    Select-Object -First 1
-
-if ($null -eq $Installer)
-{
-    $Installer = Get-ChildItem `
-        -Path $SourceFolder `
-        -Filter *.msi `
-        -File |
-        Select-Object -First 1
-}
-
-if ($null -eq $Installer)
-{
-    throw "Không tìm thấy file .exe hoặc .msi trong $SourceFolder"
-}
-
-Write-Host ""
 Write-Host "Found Installer : $($Installer.Name)"
+Copy-Item -Path $Installer.FullName -Destination $RemoteFolder -Force
+Write-Host "-> Copied Installer to $Target"
 
-# Chỉ copy đúng file cài đặt
-Copy-Item `
-    -Path $Installer.FullName `
-    -Destination $TargetFolder `
-    -Force
+# 3. Copy BỘ NÃO SCRIPT (thư mục scripts) từ Jenkins sang máy Target
+# Điều này đảm bảo máy đích có file default.ps1 và CSV để tự đọc
+$WorkspaceScripts = Join-Path $PWD "scripts"
+Copy-Item -Path $WorkspaceScripts -Destination $RemoteFolder -Recurse -Force
+Write-Host "-> Copied Deployment Scripts to $Target"
 
-Write-Host ""
-Write-Host "Copied File"
-
-Get-ChildItem $TargetFolder |
-    Select Name, Length
-
-Write-Host ""
-Write-Host "===== PREPARE SUCCESS ====="
+Write-Host "`n===== PREPARE SUCCESS ====="
